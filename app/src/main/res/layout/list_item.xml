@@ -79,6 +79,7 @@
                 android:textSize="@dimen/sp_16"
                 android:textColor="#FF9800"
                 android:layout_below="@id/tv_date"
+                android:onClick="click"
                 android:background="@color/white"/>
 
             <Button
@@ -89,6 +90,7 @@
                 android:textSize="@dimen/sp_16"
                 android:textColor="#FF9800"
                 android:layout_toRightOf="@id/btn_share"
+                android:onClick="click"
                 android:layout_alignBaseline="@id/btn_share"
                 android:background="@color/white"/>
 

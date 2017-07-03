@@ -2,9 +2,12 @@ package ryanc.cc.mynote;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -17,6 +20,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -35,6 +39,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -48,7 +53,7 @@ public class MainActivity extends AppCompatActivity
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
+            public void onClick(final View view) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 LayoutInflater inflate =LayoutInflater.from(MainActivity.this);
                 View viewDialog = inflate.inflate(R.layout.new_note_data,null);
@@ -63,6 +68,17 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
 
+                        //非空验证
+                        if(title.length()==0){
+                            Snackbar.make(view, "请输入便签标题！", Snackbar.LENGTH_LONG)
+                                    .setAction("Action", null).show();
+                            return;
+                        }
+                        if(content.length()==0){
+                            Snackbar.make(view, "请输入便签内容！", Snackbar.LENGTH_LONG)
+                                    .setAction("Action", null).show();
+                            return;
+                        }
                         //创建NoteBean对象封装数据
                         NoteBean noteBean = new NoteBean();
                         noteBean.noteTitle = title.getText().toString();
@@ -156,11 +172,33 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_exit){
             //调用退出程序的方法
             this.exitDialog();
+        } else if (id == R.id.nav_share){
+            this.shareapp();
+        } else if (id == R.id.btn_share){
+            this.shareapp();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    /**
+     * 指定onClick
+     * @param v
+     */
+    public void click(View v) {
+        // TODO Auto-generated method stub
+
+        //获取组件的资源id
+        int id = v.getId();
+        switch (id) {
+            case R.id.btn_share:
+                this.sharenote();
+                break;
+            default:
+                break;
+        }
     }
 
 
@@ -199,5 +237,27 @@ public class MainActivity extends AppCompatActivity
             MainActivity.this.exitDialog();    //调用退出的方法
         }
         return false;
+    }
+
+    //分享本app
+    public void shareapp() {
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, "http://ryanc.cc");
+        shareIntent.setType("text/plain");
+
+        //设置分享列表的标题，并且每次都显示分享列表
+        startActivity(Intent.createChooser(shareIntent, "分享此应用到"));
+    }
+
+    //分享指定便签信息
+    public void sharenote() {
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, "http://ryanc.cc");
+        shareIntent.setType("text/plain");
+
+        //设置分享列表的标题，并且每次都显示分享列表
+        startActivity(Intent.createChooser(shareIntent, "分享此便签到"));
     }
 }
