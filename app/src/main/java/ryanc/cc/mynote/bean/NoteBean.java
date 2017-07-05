@@ -1,4 +1,4 @@
-package ryanc.cc.mynote;
+package ryanc.cc.mynote.bean;
 
 import java.io.Serializable;
 
@@ -8,9 +8,9 @@ import java.io.Serializable;
  */
 
 public class NoteBean implements Serializable {
-    public String noteTitle;
-    public String noteDate;
-    public String noteContent;
+    private String noteTitle;
+    private String noteDate;
+    private String noteContent;
 
     public String getNoteTitle() {
         return noteTitle;

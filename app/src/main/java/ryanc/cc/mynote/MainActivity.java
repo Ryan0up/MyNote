@@ -4,29 +4,29 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AlertDialog;
-import android.view.KeyEvent;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.DatePicker;
-import android.widget.EditText;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import ryanc.cc.mynote.adapter.NoteListAdapter;
+import ryanc.cc.mynote.bean.NoteBean;
+import ryanc.cc.mynote.db.DatabaseHelper;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity
     private List<NoteBean> mNoteBeanList;
     private DatabaseHelper mDatabaseHelper;
     private NoteListAdapter adapter;
+    private ListView noteList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,60 +46,24 @@ public class MainActivity extends AppCompatActivity
 
         mDatabaseHelper = new DatabaseHelper(this);
         mNoteBeanList = new ArrayList<>();
-        ListView noteList = (ListView)findViewById(R.id.lv_main);
+        noteList = (ListView)findViewById(R.id.lv_main);
+
         initNoteData();
         adapter = new NoteListAdapter(this,mNoteBeanList);
         noteList.setAdapter(adapter);
 
+
+        //Fab单击跳转到添加便签页面
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                LayoutInflater inflate =LayoutInflater.from(MainActivity.this);
-                View viewDialog = inflate.inflate(R.layout.new_note_data,null);
-
-                //获取控件数据
-                final EditText title = (EditText) viewDialog.findViewById(R.id.et_note_title);
-                final EditText content = (EditText) viewDialog.findViewById(R.id.et_note_content);
-                final DatePicker date = (DatePicker) viewDialog.findViewById(R.id.dp_note_date);
-                builder.setView(viewDialog);
-                builder.setTitle("New Note");
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                        //非空验证
-                        if(title.length()==0){
-                            Snackbar.make(view, "请输入便签标题！", Snackbar.LENGTH_LONG)
-                                    .setAction("Action", null).show();
-                            return;
-                        }
-                        if(content.length()==0){
-                            Snackbar.make(view, "请输入便签内容！", Snackbar.LENGTH_LONG)
-                                    .setAction("Action", null).show();
-                            return;
-                        }
-                        //创建NoteBean对象封装数据
-                        NoteBean noteBean = new NoteBean();
-                        noteBean.noteTitle = title.getText().toString();
-                        noteBean.noteContent = content.getText().toString();
-                        noteBean.noteDate = date.getYear() + "-" + (date.getMonth()+1) + "-" + date.getDayOfMonth();
-
-                        //调用数据库帮助类的添加方法添加到SQLite数据库
-                        mDatabaseHelper.insertNote(noteBean);
-                        //添加到ListViewk控件
-                        mNoteBeanList.add(noteBean);
-                        adapter.notifyDataSetChanged();
-                    }
-                });
-
-                builder.setNegativeButton("Cancel",null);
-                builder.create().show();
-
+                Intent intent = new Intent(MainActivity.this,EditActivity.class);
+                startActivity(intent);
             }
         });
 
+        //系统写的 鬼知道是啥
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -107,25 +72,37 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        /**
+         * ListView点击事件的监听
+         */
+        noteList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Snackbar.make(view, "点鸡巴点！", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
     }
 
     /**
      * 初始化便签数据
      */
-    private void initNoteData() {
+    public void initNoteData() {
         Cursor cursor = mDatabaseHelper.getAllNoteData();
         if(cursor!=null){
             while(cursor.moveToNext()){
                 NoteBean noteBean = new NoteBean();
-                noteBean.noteTitle = cursor.getString(cursor.getColumnIndex("note_title"));
-                noteBean.noteDate = cursor.getString(cursor.getColumnIndex("note_date"));
-                noteBean.noteContent = cursor.getString(cursor.getColumnIndex("note_content"));
+                noteBean.setNoteTitle(cursor.getString(cursor.getColumnIndex("note_title")));
+                noteBean.setNoteDate(cursor.getString(cursor.getColumnIndex("note_date")));
+                noteBean.setNoteContent(cursor.getString(cursor.getColumnIndex("note_content")));
                 mNoteBeanList.add(noteBean);
             }
             cursor.close();
         }
 
     }
+
 
     @Override
     public void onBackPressed() {
@@ -196,11 +173,13 @@ public class MainActivity extends AppCompatActivity
             case R.id.btn_share:
                 this.sharenote();
                 break;
+            case R.id.btn_delete:
+                this.deletenote();
+                break;
             default:
                 break;
         }
     }
-
 
     /**
      * 退出程序的方法
@@ -259,5 +238,29 @@ public class MainActivity extends AppCompatActivity
 
         //设置分享列表的标题，并且每次都显示分享列表
         startActivity(Intent.createChooser(shareIntent, "分享此便签到"));
+    }
+
+    /**
+     * 删除便签的方法
+     */
+    public void deletenote(){
+        Dialog dialog = new AlertDialog.Builder(MainActivity.this)
+                //设置对话框标题
+                .setTitle("删除便签")
+                //对话框内容
+                .setMessage("确定删除便签？")
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        mDatabaseHelper.deleteNoteData(1);
+                        mNoteBeanList.remove(0);
+                        adapter.notifyDataSetChanged();
+                    }
+                }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                }).create();
+        //显示对话框
+        dialog.show();
     }
 }

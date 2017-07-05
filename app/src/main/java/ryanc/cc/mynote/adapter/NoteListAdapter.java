@@ -1,4 +1,4 @@
-package ryanc.cc.mynote;
+package ryanc.cc.mynote.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,6 +8,9 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import java.util.List;
+
+import ryanc.cc.mynote.bean.NoteBean;
+import ryanc.cc.mynote.R;
 
 
 /**

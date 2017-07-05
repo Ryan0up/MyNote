@@ -5,5 +5,7 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">设置</string>
+    <string name="title_activity_edit">添加便签</string>
+    <string name="hint_search">Please input the search content&#8230;</string>
 
 </resources>

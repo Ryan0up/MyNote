@@ -1,10 +1,12 @@
-package ryanc.cc.mynote;
+package ryanc.cc.mynote.db;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import ryanc.cc.mynote.bean.NoteBean;
 
 /**
  * Created by ryan0up on 2017/7/3.
@@ -41,20 +43,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void insertNote(NoteBean noteBean){
         SQLiteDatabase database = getWritableDatabase();
         ContentValues cv = new ContentValues();
-        cv.put(NOTE_TITLE,noteBean.noteTitle);
-        cv.put(NOTE_DATE,noteBean.noteDate);
-        cv.put(NOTE_CONTENT,noteBean.noteContent);
+        cv.put(NOTE_TITLE,noteBean.getNoteTitle());
+        cv.put(NOTE_DATE,noteBean.getNoteDate());
+        cv.put(NOTE_CONTENT,noteBean.getNoteContent());
         database.insert(RYAN_NOTE,null,cv);
     }
 
     public Cursor getAllNoteData(){
         SQLiteDatabase database = getWritableDatabase();
-        return database.query(RYAN_NOTE,null,null,null,null,null,NOTE_DATE+" ASC");
+        return database.query(RYAN_NOTE,null,null,null,null,null,NOTE_DATE+" desc");
     }
 
-    public void deleteAllData(){
+    public void deleteNoteData(int id){
         SQLiteDatabase database = getWritableDatabase();
-        database.delete(RYAN_NOTE,null,null);
+        database.delete("ryan_note", "id="+id,null);
     }
 
     @Override
