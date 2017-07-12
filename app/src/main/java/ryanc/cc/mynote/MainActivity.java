@@ -218,9 +218,9 @@ public class MainActivity extends AppCompatActivity
                 break;
         }
     }
-
     /**
      * 退出程序的方法
+     * 的
      */
     private void exitDialog(){
         Dialog dialog = new AlertDialog.Builder(MainActivity.this)
