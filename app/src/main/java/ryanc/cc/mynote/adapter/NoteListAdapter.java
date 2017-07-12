@@ -4,13 +4,14 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import java.util.List;
 
-import ryanc.cc.mynote.bean.NoteBean;
 import ryanc.cc.mynote.R;
+import ryanc.cc.mynote.bean.NoteBean;
 
 
 /**
@@ -22,11 +23,16 @@ public class NoteListAdapter extends BaseAdapter {
     private List<NoteBean> mList;
     private Context mContext;
     private LayoutInflater mLayoutInflater;
+    private AdapterView.OnItemClickListener listener;
 
     public NoteListAdapter(Context context,List<NoteBean> list){
         mContext = context;
         mList = list;
         mLayoutInflater = LayoutInflater.from(context);
+    }
+
+    public interface OnItemClickListener {
+        void onItemClick(AdapterView<?> parent, View view, int position,long id);
     }
 
     @Override
@@ -68,5 +74,10 @@ public class NoteListAdapter extends BaseAdapter {
         public TextView mTvNoteTitle;
         public TextView mTvNoteDate;
         public TextView mTvNoteContent;
+    }
+
+
+    public void setOnItemClickListener(AdapterView.OnItemClickListener listener) {
+        this.listener = listener;
     }
 }

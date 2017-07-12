@@ -8,10 +8,17 @@
     tools:context="ryanc.cc.mynote.MainActivity"
     tools:showIn="@layout/app_bar_main">
 
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/main_srl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" >
     <ListView
         android:id="@+id/lv_main"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:divider="@null" />
+    </android.support.v4.widget.SwipeRefreshLayout>
+
 
 </android.support.constraint.ConstraintLayout>

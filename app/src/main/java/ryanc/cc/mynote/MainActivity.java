@@ -5,11 +5,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -18,23 +19,38 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ListView;
-
+import android.os.Handler;
 import java.util.ArrayList;
 import java.util.List;
-
 import ryanc.cc.mynote.adapter.NoteListAdapter;
 import ryanc.cc.mynote.bean.NoteBean;
 import ryanc.cc.mynote.db.DatabaseHelper;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,AbsListView.OnScrollListener {
 
     private List<NoteBean> mNoteBeanList;
     private DatabaseHelper mDatabaseHelper;
     private NoteListAdapter adapter;
     private ListView noteList;
+    private SwipeRefreshLayout mRefreshSrl;
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what){
+                case 0x101:
+                    if(mRefreshSrl.isRefreshing()){
+                        adapter.notifyDataSetChanged();
+                        mRefreshSrl.setRefreshing(false);
+                    }
+                break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +63,10 @@ public class MainActivity extends AppCompatActivity
         mDatabaseHelper = new DatabaseHelper(this);
         mNoteBeanList = new ArrayList<>();
         noteList = (ListView)findViewById(R.id.lv_main);
+
+        //设置刷新圈圈的颜色交替
+        mRefreshSrl = (SwipeRefreshLayout) findViewById(R.id.main_srl);
+        mRefreshSrl.setColorSchemeResources(R.color.red, R.color.blue);
 
         initNoteData();
         adapter = new NoteListAdapter(this,mNoteBeanList);
@@ -79,8 +99,24 @@ public class MainActivity extends AppCompatActivity
         noteList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Snackbar.make(view, "点鸡巴点！", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                //根据getItem方法获取NoteBean对象
+                NoteBean noteBean = (NoteBean) adapter.getItem(position);
+
+                //创建Bundle对象储存值
+                Bundle bundle = new Bundle();
+                bundle.putString("title",noteBean.getNoteTitle());
+                bundle.putString("content",noteBean.getNoteContent());
+                Intent intent = new Intent();
+                intent.putExtras(bundle);
+                intent.setClass(MainActivity.this, NoteDetailActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        mRefreshSrl.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                new LoadDataThread().start();
             }
         });
     }
@@ -89,10 +125,12 @@ public class MainActivity extends AppCompatActivity
      * 初始化便签数据
      */
     public void initNoteData() {
+        mNoteBeanList.clear();
         Cursor cursor = mDatabaseHelper.getAllNoteData();
         if(cursor!=null){
             while(cursor.moveToNext()){
                 NoteBean noteBean = new NoteBean();
+                noteBean.setId(cursor.getInt(cursor.getColumnIndex("id")));
                 noteBean.setNoteTitle(cursor.getString(cursor.getColumnIndex("note_title")));
                 noteBean.setNoteDate(cursor.getString(cursor.getColumnIndex("note_date")));
                 noteBean.setNoteContent(cursor.getString(cursor.getColumnIndex("note_content")));
@@ -152,7 +190,7 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_share){
             this.shareapp();
         } else if (id == R.id.btn_share){
-            this.shareapp();
+            this.sharenote();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -233,7 +271,7 @@ public class MainActivity extends AppCompatActivity
     public void sharenote() {
         Intent shareIntent = new Intent();
         shareIntent.setAction(Intent.ACTION_SEND);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, "http://ryanc.cc");
+        shareIntent.putExtra(Intent.EXTRA_TEXT, "这是一条便签信息");
         shareIntent.setType("text/plain");
 
         //设置分享列表的标题，并且每次都显示分享列表
@@ -251,8 +289,8 @@ public class MainActivity extends AppCompatActivity
                 .setMessage("确定删除便签？")
                 .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        mDatabaseHelper.deleteNoteData(1);
-                        mNoteBeanList.remove(0);
+                        mDatabaseHelper.deleteNoteData(0);
+                        mNoteBeanList.remove(1);
                         adapter.notifyDataSetChanged();
                     }
                 }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -262,5 +300,32 @@ public class MainActivity extends AppCompatActivity
                 }).create();
         //显示对话框
         dialog.show();
+    }
+
+    private int visibleLastIndex;//用来可显示的最后一条数据的索引
+    @Override
+    public void onScrollStateChanged(AbsListView view, int scrollState) {
+        if(adapter.getCount() == visibleLastIndex && scrollState == SCROLL_STATE_IDLE){
+            new LoadDataThread().start();
+        }
+    }
+
+    @Override
+    public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+        visibleLastIndex = firstVisibleItem + visibleItemCount - 1;//减去最后一个加载中那条
+    }
+
+
+    class LoadDataThread extends Thread{
+        @Override
+        public void run() {
+            initNoteData();
+            try {
+                Thread.sleep(2000);
+            }catch(InterruptedException e){
+                e.printStackTrace();
+            }
+            handler.sendEmptyMessage(0x101);
+        }
     }
 }
